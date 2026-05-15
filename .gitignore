@@ -12,3 +12,4 @@ dist/
 
 .adk/
 agent/**/.adk/
+.venv/*
