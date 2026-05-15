@@ -1,4 +1,6 @@
-# Gemini hackathon starter
+# Gemini hackathon starter 
+
+# made out of original starter
 
 End-to-end template for the **Arize @ Google Cloud Partnerships Hackathon** track: a small **Google ADK** agent (pattern from [google/adk-samples personalized-shopping](https://github.com/google/adk-samples/tree/main/python/agents/personalized-shopping)), **OpenInference** instrumentation for ADK, **[phoenix.otel.register](https://arize.com/docs/phoenix/get-started/get-started-tracing)** for Phoenix Cloud tracing, and **Gemini CLI** MCP config for `@arizeai/phoenix-mcp`.
 
