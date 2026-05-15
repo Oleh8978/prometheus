@@ -1,0 +1,23 @@
+[project]
+name = "gemini-hackathon"
+version = "0.1.0"
+description = "ADK shopping demo + Phoenix tracing for the Arize / Google Cloud hackathon track"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "openinference-instrumentation-google-adk>=0.1.11",
+    "google-adk>=1.32.0",
+    "google-genai>=1.9.0",
+    "python-dotenv>=1.0.1",
+    "opentelemetry-sdk>=1.27.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.27.0",
+    "arize-phoenix>=7.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["agent/shopping_demo"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

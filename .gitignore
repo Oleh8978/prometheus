@@ -1,0 +1,14 @@
+.env
+.DS_Store
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+.arize-tmp-traces/
+
+.adk/
+agent/**/.adk/
