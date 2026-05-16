@@ -16,3 +16,4 @@ agent/**/.adk/
 .gemini/settings.json
 .gemini/trace.json
 .gemini/trace-*.json
+PLAN.md
