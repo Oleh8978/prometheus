@@ -13,3 +13,6 @@ dist/
 .adk/
 agent/**/.adk/
 .venv/*
+.gemini/settings.json
+.gemini/trace.json
+.gemini/trace-*.json
