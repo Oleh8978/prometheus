@@ -1,4 +1,4 @@
-# Gemini hackathon starter 
+# Gemini hackathon research agent  
 
 # made out of original starter
 
