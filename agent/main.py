@@ -29,7 +29,7 @@ from google.adk.runners import InMemoryRunner
 from google.genai import types
 
 from instrumentation import setup_tracing
-from shopping_demo.agent import root_agent
+from research_agent.agent import root_agent
 
 
 async def run_turn(user_text: str) -> None:

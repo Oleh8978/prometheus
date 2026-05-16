@@ -20,9 +20,9 @@ from google.adk.tools import FunctionTool
 from dotenv import load_dotenv
 
 from instrumentation import setup_tracing
-from shopping_demo.prompt import personalized_shopping_agent_instruction
-from shopping_demo.tools.click import click
-from shopping_demo.tools.search import search
+from research_agent.prompt import personalized_shopping_agent_instruction
+from research_agent.tools.click import click
+from research_agent.tools.search import search
 
 # Ensure ADK CLI runs (`adk run shopping_demo`) load local env and tracing.
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")

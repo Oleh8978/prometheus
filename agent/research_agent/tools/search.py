@@ -14,7 +14,7 @@
 
 from google.adk.tools import ToolContext
 
-from shopping_demo.mini_webshop import get_webshop_env
+from research_agent.mini_webshop import get_webshop_env
 
 
 async def search(keywords: str, tool_context: ToolContext) -> str:
