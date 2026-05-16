@@ -13,6 +13,7 @@ dependencies = [
     "opentelemetry-sdk>=1.27.0",
     "opentelemetry-exporter-otlp-proto-http>=1.27.0",
     "arize-phoenix>=7.0",
+    "arize-phoenix-evals>=3.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]

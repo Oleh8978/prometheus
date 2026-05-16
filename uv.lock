@@ -918,6 +918,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "arize-phoenix" },
+    { name = "arize-phoenix-evals" },
     { name = "google-adk" },
     { name = "google-genai" },
     { name = "openinference-instrumentation-google-adk" },
@@ -929,6 +930,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "arize-phoenix", specifier = ">=7.0" },
+    { name = "arize-phoenix-evals", specifier = ">=3.0.0" },
     { name = "google-adk", specifier = ">=1.32.0" },
     { name = "google-genai", specifier = ">=1.9.0" },
     { name = "openinference-instrumentation-google-adk", specifier = ">=0.1.11" },
