@@ -39,12 +39,15 @@ async def run_turn(user_text: str) -> None:
     await runner.session_service.create_session(
         app_name=app_name, user_id=user_id, session_id=session_id
     )
-    async for _ in runner.run_async(
+    async for event in runner.run_async(
         user_id=user_id,
         session_id=session_id,
         new_message=types.Content(role="user", parts=[types.Part(text=user_text)]),
     ):
-        pass
+        if event.is_final_response() and event.content and event.content.parts:
+            for part in event.content.parts:
+                if part.text:
+                    print(part.text)
 
 
 def main() -> None:
