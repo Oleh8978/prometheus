@@ -20,7 +20,7 @@ from google.adk.tools import FunctionTool
 from dotenv import load_dotenv
 
 from instrumentation import setup_tracing
-from research_agent.prompt import reasearch_agent_instruction
+from research_agent.prompt import research_agent_instruction
 
 # Ensure ADK CLI runs (`adk run shopping_demo`) load local env and tracing.
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -31,7 +31,7 @@ _model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 root_agent = Agent(
     model=_model,
     name="research_agent",
-    instruction=reasearch_agent_instruction,
+    instruction=research_agent_instruction,
     tools=[
         #FunctionTool(func=search),
         #FunctionTool(func=click),
