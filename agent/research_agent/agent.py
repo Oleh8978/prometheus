@@ -1,4 +1,4 @@
-# Copyright 2025 Google LLC
+# Copyright 2026 Oleh8978
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ from google.adk.tools import FunctionTool
 from dotenv import load_dotenv
 
 from instrumentation import setup_tracing
-from research_agent.prompt import personalized_shopping_agent_instruction
-from research_agent.tools.click import click
-from research_agent.tools.search import search
+from research_agent.prompt import reasearch_agent_instruction
 
 # Ensure ADK CLI runs (`adk run shopping_demo`) load local env and tracing.
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -32,10 +30,10 @@ _model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 root_agent = Agent(
     model=_model,
-    name="personalized_shopping_agent",
-    instruction=personalized_shopping_agent_instruction,
+    name="research_agent",
+    instruction=reasearch_agent_instruction,
     tools=[
-        FunctionTool(func=search),
-        FunctionTool(func=click),
+        #FunctionTool(func=search),
+        #FunctionTool(func=click),
     ],
 )

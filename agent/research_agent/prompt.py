@@ -1,4 +1,4 @@
-# Copyright 2025 Google LLC
+# Copyright 2026 Oleh8978
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""System instruction adapted from google/adk-samples personalized-shopping."""
-
-personalized_shopping_agent_instruction = """You are a webshop agent. Help the user find a product and walk through selection using the tools.
+reasearch_agent_instruction = """You are a webshop agent. Help the user find a product and walk through selection using the tools.
 
 **Interaction Flow**
 
