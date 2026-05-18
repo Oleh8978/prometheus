@@ -1,0 +1,102 @@
+[
+  {
+    "id": "q01",
+    "question": "What are the tradeoffs between vector databases and PostgreSQL pgvector for production RAG systems in 2025, and which should a startup choose at under 10M vectors?",
+    "expected_topics": ["latency", "cost", "operational complexity", "hybrid search", "pgvector limitations"]
+  },
+  {
+    "id": "q02",
+    "question": "How do Anthropic and OpenAI differ in their approaches to AI safety, and what concrete technical mechanisms does each use?",
+    "expected_topics": ["constitutional AI", "RLHF", "red-teaming", "interpretability", "alignment research"]
+  },
+  {
+    "id": "q03",
+    "question": "What caused the 2023 regional banking crisis in the US, and what regulatory changes resulted?",
+    "expected_topics": ["SVB", "interest rate risk", "FDIC", "Basel III", "liquidity requirements"]
+  },
+  {
+    "id": "q04",
+    "question": "Compare GLP-1 drugs (Ozempic, Wegovy) vs traditional bariatric surgery on 5-year weight loss outcomes and cardiovascular risk.",
+    "expected_topics": ["semaglutide efficacy", "surgery outcomes", "cardiovascular benefits", "side effects", "cost"]
+  },
+  {
+    "id": "q05",
+    "question": "What are the main technical bottlenecks preventing autonomous vehicles from reaching SAE Level 4 at scale in 2025?",
+    "expected_topics": ["edge cases", "sensor fusion", "regulatory", "compute cost", "safety validation"]
+  },
+  {
+    "id": "q06",
+    "question": "How does the EU AI Act classify AI systems by risk, and what does high-risk classification mean for a startup building an LLM-powered hiring tool?",
+    "expected_topics": ["risk tiers", "conformity assessment", "prohibited uses", "transparency requirements", "SME exemptions"]
+  },
+  {
+    "id": "q07",
+    "question": "What is the current scientific consensus on microplastics in human blood, and what health effects have been demonstrated vs hypothesized?",
+    "expected_topics": ["bioaccumulation", "inflammation", "peer-reviewed studies", "exposure pathways", "uncertainty"]
+  },
+  {
+    "id": "q08",
+    "question": "Why did several major quantum computing milestones in 2024-2025 get disputed, and what does 'quantum advantage' actually require to claim?",
+    "expected_topics": ["error correction", "qubit fidelity", "classical simulation", "Google Willow", "benchmarking standards"]
+  },
+  {
+    "id": "q09",
+    "question": "How do transformer attention mechanisms differ between GPT-style and Mamba/SSM architectures, and what workloads favor each?",
+    "expected_topics": ["quadratic attention", "state space models", "long context", "inference speed", "training cost"]
+  },
+  {
+    "id": "q10",
+    "question": "What evidence exists for or against the 'productivity paradox' of remote work, and how does it vary by role type?",
+    "expected_topics": ["knowledge workers", "creative work", "measurement challenges", "collaboration overhead", "study quality"]
+  },
+  {
+    "id": "q11",
+    "question": "What are the most credible proposed mechanisms for dark matter, and what experiments are currently testing each?",
+    "expected_topics": ["WIMPs", "axions", "primordial black holes", "LUX-ZEPLIN", "detection methods"]
+  },
+  {
+    "id": "q12",
+    "question": "How does CRISPR-Cas9 off-target editing risk compare to base editing and prime editing for therapeutic applications?",
+    "expected_topics": ["off-target rates", "delivery methods", "clinical trials", "safety profile", "editing precision"]
+  },
+  {
+    "id": "q13",
+    "question": "What caused the collapse of FTX, and how did it differ from previous crypto exchange failures?",
+    "expected_topics": ["Alameda Research", "commingled funds", "CoinDesk report", "liquidity crisis", "regulatory gaps"]
+  },
+  {
+    "id": "q14",
+    "question": "Compare nuclear fusion approaches: tokamak (ITER), inertial confinement (NIF), and private ventures (Commonwealth Fusion) on timeline and feasibility.",
+    "expected_topics": ["Q factor", "plasma confinement", "cost", "timeline", "ignition"]
+  },
+  {
+    "id": "q15",
+    "question": "What are the actual emissions tradeoffs of EVs vs combustion engines over full lifecycle, accounting for grid mix and battery production?",
+    "expected_topics": ["lifecycle analysis", "battery mining", "grid carbon intensity", "manufacturing emissions", "regional variation"]
+  },
+  {
+    "id": "q16",
+    "question": "How do central banks use reverse repos and quantitative tightening, and what effects did QT have on US markets in 2023-2024?",
+    "expected_topics": ["balance sheet reduction", "Treasury market liquidity", "overnight repo", "bank reserves", "market impact"]
+  },
+  {
+    "id": "q17",
+    "question": "What interventions have the strongest evidence for treating treatment-resistant depression, and what's the current FDA approval status?",
+    "expected_topics": ["ketamine/esketamine", "ECT", "psilocybin", "TMS", "evidence quality"]
+  },
+  {
+    "id": "q18",
+    "question": "How does India's UPI payment system work technically, and why have similar real-time payment systems struggled to gain adoption in the US?",
+    "expected_topics": ["NPCI architecture", "interoperability", "FedNow", "bank incentives", "merchant adoption"]
+  },
+  {
+    "id": "q19",
+    "question": "What are the main competing theories for why the universe's expansion is accelerating, and how does each relate to the cosmological constant problem?",
+    "expected_topics": ["dark energy", "quintessence", "vacuum energy", "ΛCDM", "observational evidence"]
+  },
+  {
+    "id": "q20",
+    "question": "How do large language models handle multi-step mathematical reasoning, and what architectural or training changes most improve performance on competition math?",
+    "expected_topics": ["chain-of-thought", "process reward models", "RLVR", "scratchpad", "o1/o3 approach"]
+  }
+]

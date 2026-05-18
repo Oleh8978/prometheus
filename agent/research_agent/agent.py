@@ -16,11 +16,17 @@ import os
 from pathlib import Path
 
 from google.adk.agents import Agent
-from google.adk.tools import FunctionTool
+from google.adk.tools import FunctionTool, google_search
 from dotenv import load_dotenv
 
 from instrumentation import setup_tracing
 from research_agent.prompt import research_agent_instruction
+
+from research_agent.tools.research_tools import (
+    extract_key_claims,
+    identify_contradictions,
+    assess_citation_quality,
+)
 
 # Ensure ADK CLI runs (`adk run shopping_demo`) load local env and tracing.
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -32,8 +38,10 @@ root_agent = Agent(
     model=_model,
     name="research_agent",
     instruction=research_agent_instruction,
-    tools=[
-        #FunctionTool(func=search),
-        #FunctionTool(func=click),
+        tools=[
+        google_search,                              # ADK built-in: web search
+        FunctionTool(func=extract_key_claims),      # pull structured claims from text
+        FunctionTool(func=identify_contradictions), # spot conflicting sources
+        FunctionTool(func=assess_citation_quality), # self-check citations before output
     ],
 )
