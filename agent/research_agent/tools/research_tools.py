@@ -82,7 +82,7 @@ def _search_tavily(query: str, num: int, api_key: str) -> Optional[str]:
 def _search_duckduckgo(query: str, num: int) -> str:
     """DuckDuckGo — no API key, always free, good fallback."""
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
         results = []
         with DDGS() as ddgs:
             for i, r in enumerate(ddgs.text(
