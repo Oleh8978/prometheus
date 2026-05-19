@@ -14,6 +14,9 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-http>=1.27.0",
     "arize-phoenix>=7.0",
     "arize-phoenix-evals>=3.0.0",
+    "tavily-python>=0.7.24",
+    "duckduckgo-search>=8.1.1",
+    "wikipedia-api>=0.14.1",
 ]
 
 [tool.hatch.build.targets.wheel]

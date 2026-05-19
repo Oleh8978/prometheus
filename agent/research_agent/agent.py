@@ -23,6 +23,8 @@ from instrumentation import setup_tracing
 from research_agent.prompt import research_agent_instruction
 
 from research_agent.tools.research_tools import (
+    search_web,
+    search_wikipedia,
     extract_key_claims,
     identify_contradictions,
     assess_citation_quality,
@@ -39,7 +41,8 @@ root_agent = Agent(
     name="research_agent",
     instruction=research_agent_instruction,
         tools=[
-        google_search,                              # ADK built-in: web search
+        FunctionTool(func=search_web),              # Tavily → DDG fallback
+        FunctionTool(func=search_wikipedia),        # factual grounding
         FunctionTool(func=extract_key_claims),      # pull structured claims from text
         FunctionTool(func=identify_contradictions), # spot conflicting sources
         FunctionTool(func=assess_citation_quality), # self-check citations before output
