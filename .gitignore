@@ -18,4 +18,4 @@ agent/**/.adk/
 .gemini/trace-*.json
 PLAN.md
 
-data/eval_results.json
+data/*
