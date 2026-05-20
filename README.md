@@ -1,76 +1,285 @@
-# Gemini hackathon research agent  
+# Prometheus 🔥
+### A self-improving research agent powered by Gemini + Arize Phoenix
 
-# made out of original starter
+> *Most AI agents just run. Prometheus runs, reflects, and rewrites itself.*
 
-End-to-end template for the **Arize @ Google Cloud Partnerships Hackathon** track: a small **Google ADK** agent (pattern from [google/adk-samples personalized-shopping](https://github.com/google/adk-samples/tree/main/python/agents/personalized-shopping)), **OpenInference** instrumentation for ADK, **[phoenix.otel.register](https://arize.com/docs/phoenix/get-started/get-started-tracing)** for Phoenix Cloud tracing, and **Gemini CLI** MCP config for `@arizeai/phoenix-mcp`.
+**Prometheus** is a multi-step research and synthesis agent built with Google ADK and Gemini 2.5 Flash. It answers complex, multi-part questions by decomposing them, gathering evidence from multiple sources, identifying contradictions, and producing structured analytical reports with citations.
 
-This repo uses a **tiny in-memory catalog** so you can run locally in minutes (no PyTorch, Pyserini, or multi-gigabyte product downloads). The agent still exposes the same **search** / **click** tools and a shopping-focused system prompt derived from the upstream sample.
+What makes it different: **Prometheus uses Arize Phoenix to observe its own failures, score its own outputs, and autonomously rewrite its system prompt to improve over successive cycles — without human intervention.**
 
-## Prerequisites
+---
+
+## What it does
+
+Ask Prometheus a hard research question:
+
+```
+What are the real tradeoffs between vector databases and PostgreSQL pgvector
+for production RAG systems in 2025?
+```
+
+It doesn't just answer. It works through six structured stages:
+
+| Stage | What happens |
+|-------|-------------|
+| **1. Decompose** | Breaks the question into focused sub-problems |
+| **2. Search** | Runs independent searches per sub-problem (Tavily → DuckDuckGo fallback) |
+| **3. Extract** | Pulls structured claims from each source, flags ones needing verification |
+| **4. Contradict** | Identifies conflicting information across sources |
+| **5. Synthesize** | Produces a structured report: Executive Summary, Key Findings, Evidence & Citations, Conflicting Views, Confidence Assessment, Open Questions |
+| **6. Self-evaluate** | Critically reviews citation coverage, reasoning coherence, and hallucination risk before finalizing |
+
+Every step of every run is traced to **Arize Phoenix** via OpenInference — zero manual instrumentation code.
+
+---
+
+## The self-improvement loop
+
+After a batch of runs, a second agent — the **improvement agent** — takes over:
+
+```
+Batch run 20 questions → traces auto-flow to Phoenix
+            ↓
+LLM-as-Judge scores each span on 4 dimensions
+  citation_groundedness · reasoning_coherence
+  hallucination_risk    · completeness
+            ↓
+Scores logged back to Phoenix as span annotations
+            ↓
+Improvement agent uses Phoenix MCP tools at runtime:
+  list-traces   → find recent runs
+  get-spans     → read what went wrong in detail
+  get-prompt-version → read current system prompt
+            ↓
+Diagnoses 2-3 specific, concrete failure patterns
+  (not "cite better" — "URLs present but no author/year makes claims unverifiable")
+            ↓
+Rewrites system prompt → upsert-prompt → saved to Phoenix Prompts registry
+            ↓
+Next batch uses improved prompt → eval scores go up → repeat
+```
+
+This is not simulated. The improvement agent calls live `@arizeai/phoenix-mcp` MCP tools, reads real operational data, and writes a versioned prompt back to Phoenix — the same data visible in your Phoenix Cloud dashboard.
+
+---
+
+## Eval results across improvement cycles
+
+| Metric | Cycle 1 (baseline) | Cycle 2 | Cycle 3 |
+|--------|--------------------|---------|---------|
+| `citation_groundedness` | — | — | — |
+| `reasoning_coherence` | — | — | — |
+| `hallucination_risk` | — | — | — |
+| `completeness` | — | — | — |
+
+> Fill in after running cycles. Baseline scores visible in Phoenix: [app.phoenix.arize.com/s/you-can-do-your-own-phoenix-or-ask-me-to-share-mine](https://app.phoenix.arize.com/s/you-can-do-your-own-phoenix-or-ask-me-to-share-mine)
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  User / Batch Runner                 │
+└──────────────────────┬──────────────────────────────┘
+                       │ question
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│              Research Agent (Google ADK)             │
+│                                                     │
+│  Tools:                                             │
+│  ├── search_web()          Tavily → DDG fallback    │
+│  ├── search_wikipedia()    Free factual grounding   │
+│  ├── extract_key_claims()  Claim classification     │
+│  ├── identify_contradictions() Cross-source check   │
+│  └── assess_citation_quality() Pre-output check     │
+└──────────────────────┬──────────────────────────────┘
+                       │ auto_instrument=True
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│             Arize Phoenix Cloud                      │
+│                                                     │
+│  Traces ──► Spans ──► Annotations (eval scores)     │
+│  Prompts registry (versioned system prompts)        │
+└──────┬───────────────────────────────┬──────────────┘
+       │ get_spans()                   │ MCP tools
+       │ add_span_annotation()         │ list-traces
+       ▼                               │ get-spans
+┌─────────────┐                        │ get-prompt-version
+│ Eval Runner │                        │ upsert-prompt
+│ (Gemini     │                        ▼
+│  LLM-Judge) │          ┌─────────────────────────┐
+└─────────────┘          │   Improvement Agent      │
+                         │   (Google ADK + MCP)     │
+                         │                          │
+                         │   Reads → Diagnoses →    │
+                         │   Rewrites → Saves       │
+                         └─────────────────────────┘
+```
+
+---
+
+## Quick start
+
+### Prerequisites
 
 - Python 3.10–3.12
-- [uv](https://docs.astral.sh/uv/)
-- Google auth for Gemini: either `GOOGLE_API_KEY` **or** Vertex (`gcloud auth application-default login` + project/location)
-- Phoenix Cloud API key ([Phoenix](https://app.phoenix.arize.com))
+- [uv](https://docs.astral.sh/uv/) — `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- Node.js 18+ — for Phoenix MCP server (`npx @arizeai/phoenix-mcp`)
+- A Gemini API key from [aistudio.google.com](https://aistudio.google.com/app/apikey)
+- A Phoenix Cloud account (free) from [app.phoenix.arize.com](https://app.phoenix.arize.com)
+- A Tavily API key (free, 1000/month) from [app.tavily.com](https://app.tavily.com)
 
-## 10-minute quickstart
+### Install
 
-1. **Clone and install**
-  ```bash
-   cd gemini-hackathon
-   cp .env.example .env
-   # Edit .env: PHOENIX_API_KEY, PHOENIX_COLLECTOR_ENDPOINT (Hostname with /s/...), and either GOOGLE_API_KEY or Vertex settings.
-   uv sync
-  ```
-2. **Run a traced shopping turn**
-  ```bash
-   make run MESSAGE='Find a floral dress in size M'
-  ```
-3. **Open Phoenix** — project name defaults to `PHOENIX_PROJECT_NAME` (`gemini-hackathon`). Confirm LLM and tool spans appear.
-4. **(Optional) ADK CLI**
-  ```bash
-   make run-adk
-   # Find a floral dress in size M
-  ```
-   This path also loads `.env` and initializes Phoenix tracing.
+```bash
+git clone https://github.com/Oleh8978/prometheus.git
+cd prometheus
+cp .env.example .env
+# Edit .env with your keys (see below)
+uv sync
+```
 
-### Phoenix MCP (Gemini CLI)
+### Configure `.env`
 
-Phoenix MCP runs **inside Gemini CLI**, not inside the Python ADK process. After traces are flowing from `make run`, you can inspect the same Phoenix space from the CLI. Setup patterns and clients are covered in [Phoenix MCP server](https://arize.com/docs/phoenix/integrations/phoenix-mcp-server).
+```env
+# Phoenix Cloud
+PHOENIX_API_KEY=px_live_...
+PHOENIX_COLLECTOR_ENDPOINT=https://app.phoenix.arize.com/s/your-space-name
+PHOENIX_PROJECT_NAME=gemini-hackathon
 
-1. **Configure MCP** — Ensure `[.gemini/settings.json](.gemini/settings.json)` in this repo (or `~/.gemini/settings.json`) includes the `phoenix` server with `@arizeai/phoenix-mcp@latest`. Set `--baseUrl` to your Phoenix space hostname (same idea as `PHOENIX_COLLECTOR_ENDPOINT`: `https://app.phoenix.arize.com/s/your-space`) and set `--apiKey` to your Phoenix API key (`px_live_...`), or keep keys only in env if your CLI supports that pattern.
-2. **Export your API key** in the shell that launches Gemini CLI (if the MCP server reads it from the environment):
-  ```bash
-   export PHOENIX_API_KEY=...
-  ```
-3. **Start Gemini CLI** from the repo root (or merge the `mcpServers` block into your global Gemini config). Restart the CLI if you just changed MCP settings.
-4. **Agent queries Phoenix via MCP (runtime superpower)** — With `@arizeai/phoenix-mcp` configured, the assistant gets **tools** over your Phoenix workspace (traces, sessions, experiments, prompts, datasets, and more). Try prompts such as:
-  - *“In Phoenix, show me the last 3 traces in my **gemini-hackathon** project.”*
-  - *“In Phoenix, summarize my latest experiment results.”*
-  - *“In Phoenix, create a prompt that classifies user intent.”*
-   Additional ideas (sessions, annotation configs, datasets): [Using the Phoenix MCP server](https://arize.com/docs/phoenix/integrations/phoenix-mcp-server#using-the-phoenix-mcp-server).
-5. **(Optional)** The same file defines **Phoenix Docs MCP** (`phoenix-docs`) for in-IDE Phoenix documentation.
+# Gemini
+GOOGLE_API_KEY=AIzaSy...
+GEMINI_MODEL=gemini-2.5-flash
 
-More context: [Phoenix docs](https://arize.com/docs/phoenix).
+# Search (free tier)
+TAVILY_API_KEY=tvly-...
+```
 
-## Layout
+### Run a single research query
 
+```bash
+make run MESSAGE="What caused the 2023 US regional banking crisis?"
+```
 
-| Path                       | Purpose                                                                                                                                |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `README.md`                | This quickstart                                                                                                                        |
-| `.env.example`             | `PHOENIX_`*, `GOOGLE_`*, optional `GEMINI_MODEL`                                                                                       |
-| `.gemini/settings.json`    | Phoenix MCP + Phoenix Docs MCP                                                                                                         |
-| `agent/main.py`            | One-shot CLI run with tracing                                                                                                          |
-| `agent/instrumentation.py` | `[phoenix.otel.register(..., auto_instrument=True)](https://arize.com/docs/phoenix/integrations/python/google-adk/google-adk-tracing)` |
-| `agent/shopping_demo/`     | ADK `root_agent`, prompt, tools, mini webshop                                                                                          |
-| `Makefile`                 | `make setup`, `make run`, `make run-adk`                                                                                               |
+### Run the full batch (20 research questions)
 
+```bash
+make batch-quick    # first 5 questions — good for testing
+make batch          # all 20 questions
+```
 
-## Upstream credit
+### Run LLM-as-Judge evals on traces
 
-Agent structure and prompts are adapted from **Google ADK Samples** — [personalized-shopping](https://github.com/google/adk-samples/tree/main/python/agents/personalized-shopping) (Apache-2.0). Replace `shopping_demo/mini_webshop.py` with the full WebShop stack when you need the original fidelity.
+```bash
+make evals
+```
+
+Scores appear as annotations on each span in Phoenix Cloud. Check your project → click any trace → look for the colored annotation badges on the `invocation` span.
+
+### Run one improvement cycle
+
+```bash
+make improve CYCLE=1
+```
+
+The improvement agent reads trace data and eval scores via Phoenix MCP, diagnoses failure patterns, rewrites the system prompt, and saves it to Phoenix Prompts as a new version.
+
+### Run a full pipeline cycle (batch + evals + improve)
+
+```bash
+make pipeline CYCLE=1
+```
+
+---
+
+## Project structure
+
+```
+prometheus/
+├── agent/
+│   ├── instrumentation.py          Phoenix tracing setup (auto_instrument=True)
+│   ├── main.py                     Single-query CLI entry point
+│   ├── improvement_agent.py        Self-improvement loop via Phoenix MCP
+│   └── research_agent/
+│       ├── agent.py                ADK Agent with 5 FunctionTools
+│       ├── prompt.py               6-step research system prompt
+│       └── tools/
+│           ├── research_tools.py   search_web, search_wikipedia,
+│           │                       extract_key_claims, identify_contradictions,
+│           │                       assess_citation_quality
+│           └── get_trace.py        Phoenix span inspector (debug utility)
+├── evals/
+│   └── run_evals.py                Gemini LLM-as-Judge pipeline → Phoenix annotations
+├── scripts/
+│   ├── batch_run.py                Run all 20 questions, traces → Phoenix
+│   ├── pipeline.py                 Full cycle orchestrator
+│   └── score_summary.py            Print eval score table across cycles
+├── data/
+│   ├── research_questions.json     20 hard multi-domain research questions
+│   ├── batch_results.json          Agent answers (auto-generated)
+│   ├── eval_results.json           Eval scores (auto-generated)
+│   └── change_log_cycle_N.txt      Improvement agent's change log (auto-generated)
+├── .gemini/settings.json           Phoenix MCP server config for Gemini CLI
+├── Makefile                        All commands
+└── pyproject.toml                  Dependencies (uv)
+```
+
+---
+
+## Makefile commands
+
+```bash
+make run MESSAGE="..."    # single query
+make batch-quick          # 5 questions
+make batch                # all 20 questions
+make evals                # score all traces
+make improve CYCLE=1      # run improvement agent
+make pipeline CYCLE=1     # batch + evals + improve in one shot
+make scores               # print current score summary table
+```
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|-------|-----------|
+| Agent runtime | [Google ADK](https://google.github.io/adk-docs/) |
+| LLM | Gemini 2.5 Flash |
+| Tracing | [Arize Phoenix Cloud](https://app.phoenix.arize.com) |
+| Instrumentation | [openinference-instrumentation-google-adk](https://pypi.org/project/openinference-instrumentation-google-adk/) |
+| MCP (self-introspection) | [@arizeai/phoenix-mcp](https://arize.com/docs/phoenix/integrations/phoenix-mcp-server) |
+| Evals | Gemini LLM-as-Judge via `google-genai` + `phoenix.client` |
+| Web search | [Tavily](https://tavily.com) (free tier) → [DDGS](https://pypi.org/project/ddgs/) fallback |
+| Package manager | [uv](https://docs.astral.sh/uv/) |
+
+---
+
+## The 4 eval dimensions
+
+Each agent response is scored on four dimensions by a Gemini LLM-as-Judge:
+
+**`citation_groundedness`** — Does every major claim reference a specific source (URL, named publication, or author)? Scores: `well_cited` (1.0) · `partially_cited` (0.5) · `uncited` (0.0)
+
+**`reasoning_coherence`** — Did the agent decompose the question, weigh evidence, and reach logical conclusions? Scores: `coherent` (1.0) · `partial` (0.5) · `incoherent` (0.0)
+
+**`hallucination_risk`** — Are specific numbers, dates, and study names cited or appropriately hedged? Scores: `low_risk` (1.0) · `medium_risk` (0.5) · `high_risk` (0.0)
+
+**`completeness`** — Did the report address all aspects of the question including tradeoffs and uncertainty? Scores: `complete` (1.0) · `partial` (0.5) · `incomplete` (0.0)
+
+Scores are logged back to Phoenix as span annotations via `client.spans.add_span_annotation()` and are readable in the Phoenix UI and by the improvement agent via MCP.
+
+---
+
+## What we learned
+
+The bottleneck is not the model — it's prompt specificity. Gemini 2.5 Flash produces strong citation discipline, but only when the system prompt gives concrete, explicit instructions about *how* to cite (author, year, URL) rather than just *that* it should. The improvement agent discovered this in cycle 1 from reading actual trace data — not from intuition.
+
+The Phoenix MCP layer gives the improvement agent qualitatively different self-knowledge than just reading its own output. Via `list-traces` and `get-spans`, it can see latency per reasoning step, token cost per sub-question, and where in the chain reasoning broke down — signal no eval score alone provides.
+
+---
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE).
+Apache-2.0 — see [LICENSE](LICENSE)
