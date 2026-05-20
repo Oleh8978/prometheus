@@ -145,15 +145,21 @@ Label the new prompt version as: cycle-{cycle_number}
     )
 
     change_log = ""
-    async for event in runner.run_async(
-        user_id=user_id,
-        session_id=session_id,
-        new_message=types.Content(role="user", parts=[types.Part(text=user_message)]),
-    ):
-        if event.is_final_response() and event.content and event.content.parts:
-            for part in event.content.parts:
-                if part.text:
-                    change_log += part.text
+    try:
+        async for event in runner.run_async(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=types.Content(role="user", parts=[types.Part(text=user_message)]),
+        ):
+            if event.is_final_response() and event.content and event.content.parts:
+                for part in event.content.parts:
+                    if part.text:
+                        change_log += part.text
+    finally:
+        try:
+            await phoenix_tools.close()
+        except Exception as e:
+            print(f"Warning: error closing Phoenix MCP toolset: {e}")
 
     print(f"\n── Improvement Cycle {cycle_number} Change Log ──")
     print(change_log)
