@@ -15,3 +15,21 @@ run:
 
 run-adk:
 	cd agent && uv run adk run shopping_demo
+
+batch:
+	cd agent && uv run python ../scripts/batch_run.py
+
+batch-quick:
+	cd agent && uv run python ../scripts/batch_run.py --quick
+
+evals:
+	cd agent && uv run python ../evals/run_evals.py
+
+improve:
+	cd agent && uv run python improvement_agent.py $(CYCLE)
+
+pipeline:
+	cd agent && uv run python ../scripts/pipeline.py $(CYCLE)
+
+scores:
+	uv run python scripts/score_summary.py
