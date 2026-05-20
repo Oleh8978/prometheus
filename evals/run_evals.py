@@ -1,5 +1,12 @@
 """
-LLM-as-Judge evals — Gemini direct, robust label parsing, correct Phoenix annotation API.
+Run LLM-as-Judge evals on research agent traces.
+
+Strategy: get_traces_dataframe() pulls spans from Phoenix (unchanged — confirmed
+working). Evaluation is done by calling Gemini directly via google-genai, because
+create_evaluator(kind="llm") in the installed arize-phoenix-evals does not accept
+a `prompt` or `output_config` kwarg, making async_evaluate_dataframe produce no
+useful scores. Scores are logged back as Phoenix span annotations and saved to
+data/eval_results.json for the improvement agent.
 """
 from __future__ import annotations
 
@@ -14,78 +21,88 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
-from google import genai
+from google import genai  # package: google-genai  (Pylance "unknown" warning is a false positive)
 from phoenix.client import Client
 
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
 def _gemini_client() -> genai.Client:
+    """
+    Picks the right backend from your .env:
+
+    Vertex AI  (hackathon GCP credits — recommended):
+        GOOGLE_GENAI_USE_VERTEXAI=1
+        GOOGLE_CLOUD_PROJECT=<your-project>
+        GOOGLE_CLOUD_LOCATION=us-central1
+        → uses Application Default Credentials (run: gcloud auth application-default login)
+
+    Google AI Studio  (API key — free tier, low quota):
+        GOOGLE_API_KEY=<key>
+        GOOGLE_GENAI_USE_VERTEXAI=   (unset or 0)
+    """
+    use_vertex = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "").strip() in ("1", "true", "True", "TRUE")
+
+    if use_vertex:
+        project  = os.environ.get("GOOGLE_CLOUD_PROJECT")
+        location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+        if not project:
+            raise RuntimeError("GOOGLE_GENAI_USE_VERTEXAI=1 but GOOGLE_CLOUD_PROJECT is not set in .env")
+        print(f"  Using Vertex AI  project={project}  location={location}")
+        return genai.Client(vertexai=True, project=project, location=location)
+
     api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise RuntimeError("Set GOOGLE_API_KEY in your .env")
+        raise RuntimeError(
+            "No credentials found. Either set GOOGLE_API_KEY (AI Studio) "
+            "or GOOGLE_GENAI_USE_VERTEXAI=1 + GOOGLE_CLOUD_PROJECT (Vertex AI) in your .env"
+        )
+    print("  Using Google AI Studio (API key)")
     return genai.Client(api_key=api_key)
 
 
-def _parse_label(text: str, valid_labels: list[str]) -> tuple[str | None, str]:
-    """
-    Extract label and explanation from Gemini's response.
-    Handles multiple response formats Gemini actually uses.
-    Returns (label, explanation).
-    """
+def _parse_label(text: str, valid_labels: list[str]) -> str | None:
+    """Return the first valid label found in the model's response (case-insensitive)."""
     lower = text.lower()
-
-    # Find the label — check all valid ones, longest match wins (avoids partial hits)
-    found_label = None
-    for label in sorted(valid_labels, key=len, reverse=True):
+    for label in valid_labels:
         if label.lower() in lower:
-            found_label = label
-            break
-
-    # Extract explanation — try multiple patterns Gemini uses
-    explanation = ""
-
-    # Pattern 1: "Explanation: ..."
-    m = re.search(r'[Ee]xplanation[:\s]+(.+?)(?:\n|$)', text)
-    if m:
-        explanation = m.group(1).strip()
-
-    # Pattern 2: "because ..." or "since ..."
-    if not explanation:
-        m = re.search(r'\b(?:because|since|as|the report|this report|the agent)\b.{20,}', text, re.I)
-        if m:
-            explanation = m.group(0).strip()[:400]
-
-    # Pattern 3: just take the longest sentence that isn't the label line
-    if not explanation:
-        sentences = [s.strip() for s in re.split(r'[.\n]', text) if len(s.strip()) > 30]
-        label_sentences = [s for s in sentences if not any(lb.lower() in s.lower() for lb in valid_labels)]
-        if label_sentences:
-            explanation = max(label_sentences, key=len)[:400]
-
-    # Final fallback
-    if not explanation:
-        explanation = text.strip()[:400]
-
-    return found_label, explanation
+            return label
+    return None
 
 
-# ── 1. Pull traces ─────────────────────────────────────────────────────────────
+def _parse_explanation(text: str) -> str:
+    """Return the first sentence that looks like an explanation."""
+    lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
+    for line in lines:
+        if len(line) > 20:
+            return line[:400]
+    return text.strip()[:400]
 
-def get_traces_dataframe(project: str) -> pd.DataFrame:
+
+# ── 1. Pull traces from Phoenix ────────────────────────────────────────────────
+
+def get_traces_dataframe(project: str, limit: int = 100) -> pd.DataFrame:
+    """
+    Pull agent spans from Phoenix using get_spans().
+    Parses JSON-encoded input.value and output.value correctly.
+    """
     client = Client()
-    spans = client.spans.get_spans(project_identifier=project)
+
+    spans = client.spans.get_spans(
+        project_identifier=project,
+    )
 
     if not spans:
         print("No spans returned from Phoenix.")
         return pd.DataFrame()
 
     names = set(s.get("name", "") for s in spans)
-    print(f"Span names in project: {names}")
+    print(f"Span names found in project: {names}")
 
     rows = []
     for span in spans:
-        if not span.get("name", "").startswith("invocation"):
+        name = span.get("name", "")
+        if not name.startswith("invocation"):
             continue
 
         attrs = span.get("attributes", {})
@@ -96,27 +113,41 @@ def get_traces_dataframe(project: str) -> pd.DataFrame:
             continue
 
         try:
-            question = json.loads(raw_input)["new_message"]["parts"][0]["text"]
-        except (json.JSONDecodeError, KeyError, IndexError):
+            inp_parsed = json.loads(raw_input)
+            question = (
+                inp_parsed
+                .get("new_message", {})
+                .get("parts", [{}])[0]
+                .get("text", "")
+            )
+        except (json.JSONDecodeError, IndexError, KeyError):
             question = raw_input
 
         try:
-            answer = json.loads(raw_output)["content"]["parts"][0]["text"]
-        except (json.JSONDecodeError, KeyError, IndexError):
+            out_parsed = json.loads(raw_output)
+            answer = (
+                out_parsed
+                .get("content", {})
+                .get("parts", [{}])[0]
+                .get("text", "")
+            )
+        except (json.JSONDecodeError, IndexError, KeyError):
             answer = raw_output
 
-        if question and answer:
-            rows.append({
-                "span_id":  span["context"]["span_id"],
-                "question": question.strip(),
-                "answer":   answer.strip(),
-            })
+        if not question or not answer:
+            continue
+
+        rows.append({
+            "span_id":  span.get("context", {}).get("span_id", ""),
+            "question": question.strip(),
+            "answer":   answer.strip(),
+        })
 
     df = pd.DataFrame(rows)
-    print(f"Found {len(df)} evaluable spans")
+    print(f"Found {len(df)} evaluable spans in project '{project}'")
     if not df.empty:
-        print(f"  Q: {df['question'].iloc[0][:80]}...")
-        print(f"  A: {df['answer'].iloc[0][:80]}...")
+        print(f"Sample question: {df['question'].iloc[0][:100]}")
+        print(f"Sample answer:   {df['answer'].iloc[0][:100]}")
     return df
 
 
@@ -126,81 +157,93 @@ EVALUATORS = [
     {
         "name": "citation_groundedness",
         "prompt": """\
-Evaluate this AI research report for citation quality.
+You are evaluating a research report produced by an AI agent.
 
-Question asked: {input}
+Question the agent was asked:
+{input}
 
-Report: {output}
+Agent's report:
+{output}
 
-Does the report cite specific sources (URLs, named publications, author names) for major claims?
+Assess: Does the report provide specific citations or named sources for its major factual claims?
 
-Choose exactly one:
-- well_cited: most major claims reference a specific source or URL
-- partially_cited: some claims are sourced, others are not
-- uncited: claims made without any citation or attribution
+Respond with exactly ONE label from this list, then a one-sentence explanation:
+- well_cited      (score 1.0): most major claims have a named source, URL, or reference
+- partially_cited (score 0.5): some claims have sources, others don't
+- uncited         (score 0.0): major claims are made without any citation or source
 
-Your response format (follow exactly):
-Label: <your_choice>
-Explanation: <one sentence explaining why>""",
+Format:
+Label: <label>
+Explanation: <one sentence>""",
         "labels": {"well_cited": 1.0, "partially_cited": 0.5, "uncited": 0.0},
     },
     {
         "name": "reasoning_coherence",
         "prompt": """\
-Evaluate the reasoning quality of this AI research report.
+You are evaluating the reasoning quality of an AI research agent.
 
 Question: {input}
 Report: {output}
 
-Did the agent break the question into sub-parts, weigh evidence, and reach logical conclusions?
+Does the report show clear multi-step reasoning?
+- Did it decompose the question into parts?
+- Did it weigh evidence before concluding?
+- Are conclusions logically derived from the evidence?
 
-Choose exactly one:
-- coherent: clear decomposition, evidence-based conclusions, logical flow throughout
-- partial: some structure present but reasoning gaps or unsupported jumps exist
-- incoherent: no decomposition, conclusions not derived from evidence
+Respond with exactly ONE label, then a one-sentence explanation:
+- coherent   (score 1.0): clear decomposition, evidence-based conclusions, logical flow
+- partial    (score 0.5): some structure, but reasoning gaps or jumps present
+- incoherent (score 0.0): claims without reasoning, no decomposition, or logical inconsistencies
 
-Your response format (follow exactly):
-Label: <your_choice>
-Explanation: <one sentence explaining why>""",
+Format:
+Label: <label>
+Explanation: <one sentence>""",
         "labels": {"coherent": 1.0, "partial": 0.5, "incoherent": 0.0},
     },
     {
         "name": "hallucination_risk",
         "prompt": """\
-Check this research report for hallucination risk.
+You are checking an AI research report for hallucination risk.
 
 Report: {output}
 
-Look for: specific numbers/stats without sources, invented study names, confident claims about recent events with no citation.
+Look for:
+- Specific statistics or numbers stated as fact without a source
+- Named studies, papers, or reports that seem invented
+- Confident claims about very recent events that may not be verifiable
+- Precise figures (percentages, dates, dollar amounts) stated without citation
 
-Choose exactly one:
-- low_risk: specific claims are cited or appropriately hedged with uncertainty language
-- medium_risk: some uncited specifics exist but most claims are hedged
-- high_risk: multiple confident specific claims (numbers, studies, dates) with no source
+Respond with exactly ONE label, then give the riskiest specific example:
+- low_risk    (score 1.0): specific claims are cited or appropriately hedged
+- medium_risk (score 0.5): some uncited specifics but report is mostly hedged
+- high_risk   (score 0.0): multiple confident specific claims with no source
 
-Your response format (follow exactly):
-Label: <your_choice>
-Explanation: <quote the single riskiest unsourced claim, or write "none found">""",
+Format:
+Label: <label>
+Explanation: <riskiest example or "none found">""",
         "labels": {"low_risk": 1.0, "medium_risk": 0.5, "high_risk": 0.0},
     },
     {
         "name": "completeness",
         "prompt": """\
-Assess whether this research report fully answers the question.
+You are assessing whether an AI research report fully addresses the question asked.
 
 Question: {input}
 Report: {output}
 
-Did the agent address all major aspects? For comparison questions: did it cover both sides? Did it acknowledge uncertainty?
+Did the report address all major aspects of the question?
+- Consider: did it cover all parts of a multi-part question?
+- Did it address tradeoffs if asked for comparison?
+- Did it acknowledge what is unknown or uncertain?
 
-Choose exactly one:
-- complete: all major aspects of the question addressed
-- partial: most aspects covered but one or two missing
-- incomplete: significant parts of the question ignored
+Respond with exactly ONE label, then list any missing aspects:
+- complete   (score 1.0): all major aspects addressed
+- partial    (score 0.5): most aspects covered, one or two missing
+- incomplete (score 0.0): significant aspects of the question ignored
 
-Your response format (follow exactly):
-Label: <your_choice>
-Explanation: <list missing aspects, or write "none missing">""",
+Format:
+Label: <label>
+Explanation: <missing aspects or "none">""",
         "labels": {"complete": 1.0, "partial": 0.5, "incomplete": 0.0},
     },
 ]
@@ -214,39 +257,42 @@ async def _evaluate_one(
     row: pd.Series,
     semaphore: asyncio.Semaphore,
 ) -> dict:
+    """Call Gemini for a single (evaluator, span) pair and return a score dict."""
     prompt = evaluator["prompt"].format(
-        input=row["question"][:2000],   # cap to avoid token limits
-        output=row["answer"][:3000],
+        input=row["question"],
+        output=row["answer"],
     )
-
-    valid_labels = list(evaluator["labels"].keys())
-    text = ""
 
     async with semaphore:
         try:
-            loop = asyncio.get_running_loop()   # fix: not get_event_loop()
-            response = await loop.run_in_executor(
+            model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+            response = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: client.models.generate_content(
-                    model="gemini-2.0-flash",
+                    model=model_name,
                     contents=prompt,
                 ),
             )
             text = response.text.strip()
         except Exception as e:
-            print(f"  [warn] Gemini failed {evaluator['name']}/{row['span_id'][:8]}: {e}")
+            print(f"  [warn] Gemini call failed for {evaluator['name']}/{row['span_id'][:8]}: {e}")
+            text = ""
 
-    label, explanation = _parse_label(text, valid_labels)
-
-    # Debug: print when we can't parse — helps identify format issues
+    # Parse label
+    label = _parse_label(text, list(evaluator["labels"].keys()))
     if label is None:
-        print(f"  [warn] No label found in response for {evaluator['name']}")
-        print(f"         Response was: {repr(text[:300])}")
-        label = valid_labels[len(valid_labels) // 2]  # middle as fallback
+        keys = list(evaluator["labels"].keys())
+        label = keys[len(keys) // 2]
+        print(f"  [warn] Could not parse label — defaulting to '{label}'")
+        print(f"         Raw response: {text[:200]}")
 
     score = evaluator["labels"][label]
 
-    print(f"  ✓ {evaluator['name']}: {label} ({score}) | {explanation[:60]}...")
+    explanation = ""
+    if "Explanation:" in text:
+        explanation = text.split("Explanation:", 1)[1].strip()[:400]
+    else:
+        explanation = _parse_explanation(text)
 
     return {
         "span_id":     row["span_id"],
@@ -257,14 +303,17 @@ async def _evaluate_one(
     }
 
 
-async def _run_all_evals(df: pd.DataFrame, concurrency: int = 3) -> pd.DataFrame:
+async def _run_all_evals(df: pd.DataFrame, concurrency: int = 4) -> pd.DataFrame:
+    """Run all evaluators over all rows concurrently and return scores DataFrame."""
     ai = _gemini_client()
-    sem = asyncio.Semaphore(concurrency)
+    semaphore = asyncio.Semaphore(concurrency)
+
     tasks = [
-        _evaluate_one(ai, ev, row, sem)
+        _evaluate_one(ai, evaluator, row, semaphore)
         for _, row in df.iterrows()
-        for ev in EVALUATORS
+        for evaluator in EVALUATORS
     ]
+
     results = await asyncio.gather(*tasks)
     return pd.DataFrame(results)
 
@@ -277,26 +326,25 @@ async def run_evals(project: str | None = None) -> pd.DataFrame | None:
 
     df = get_traces_dataframe(project)
     if df.empty:
-        print("No spans to evaluate. Run: make batch-quick")
+        print("No spans to evaluate. Run the batch runner first.")
         return None
 
     total = len(df) * len(EVALUATORS)
-    print(f"\nRunning {len(EVALUATORS)} evaluators × {len(df)} spans = {total} Gemini calls...\n")
+    print(f"Running {len(EVALUATORS)} evaluators × {len(df)} spans = {total} Gemini calls...")
 
-    scores_df = await _run_all_evals(df)
+    scores_df = await _run_all_evals(df, concurrency=4)
 
-    print("\n── Eval Summary ───────────────────────────────")
-    summary = scores_df.groupby("name")["score"].agg(["mean", "min", "max"]).round(3)
+    print("\n── Eval Results ──────────────────────────")
+    summary = scores_df.groupby("name")["score"].mean().round(3)
     print(summary.to_string())
     print()
 
-    # ── Log back to Phoenix  ── FIX: use name=, not annotation_name= ──
-    logged, failed = 0, 0
+    logged = 0
     for _, row in scores_df.iterrows():
         try:
             phoenix.spans.add_span_annotation(
                 span_id=row["span_id"],
-                annotation_name=row["name"],                # ← was annotation_name, which is WRONG
+                annotation_name=row["name"],
                 score=float(row["score"]),
                 label=str(row["label"]),
                 explanation=str(row["explanation"]),
@@ -304,16 +352,14 @@ async def run_evals(project: str | None = None) -> pd.DataFrame | None:
             )
             logged += 1
         except Exception as e:
-            failed += 1
-            if failed <= 3:  # only print first 3 to avoid spam
-                print(f"  [warn] annotation failed: {e}")
+            print(f"  Warning: failed to log annotation for {row['span_id']}: {e}")
 
-    print(f"Logged {logged}/{len(scores_df)} annotations to Phoenix. ({failed} failed)")
+    print(f"Logged {logged}/{len(scores_df)} annotations to Phoenix.")
 
     out_path = Path(__file__).resolve().parents[1] / "data" / "eval_results.json"
     out_path.parent.mkdir(exist_ok=True)
     out_path.write_text(scores_df.to_json(orient="records", indent=2))
-    print(f"Saved → {out_path}")
+    print(f"Results saved to {out_path}")
 
     return scores_df
 
