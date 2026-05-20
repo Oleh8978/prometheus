@@ -9,16 +9,17 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+ROOT = Path(__file__).resolve().parents[1]   # repo root
+load_dotenv(ROOT / ".env")
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "agent"))
-
-from google.adk.runners import InMemoryRunner
-from google.genai import types
+sys.path.insert(0, str(ROOT))
 
 from agent.instrumentation import setup_tracing
 from agent.research_agent.agent import root_agent
+
+from google.adk.runners import InMemoryRunner
+from google.genai import types
 
 
 async def run_question(runner: InMemoryRunner, question: str, qid: str) -> str:
