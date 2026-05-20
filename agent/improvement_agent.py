@@ -17,9 +17,9 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 from google.adk.agents import Agent
 from google.adk.runners import InMemoryRunner
-from google.adk.tools import FunctionTool
+from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
-from mcp import StdioServerParameters
+from mcp.client.stdio import StdioServerParameters
 from google.genai import types
 
 
@@ -48,21 +48,33 @@ def load_eval_summary() -> str:
             expl = str(row.get("explanation", ""))[:200]
             summary_lines.append(f"  - span {row['span_id'][:8]}... label={row.get('label')} | {expl}")
 
-    return "\n".join(summary_lines)
+    summary = "\n".join(summary_lines)
+    if len(summary) > 2000:
+        summary = summary[:2000].rstrip() + "\n...[summary truncated to avoid token limits]"
+    return summary
 
 
 # ── Phoenix MCP toolset ────────────────────────────────────────────────────────
 
 def make_phoenix_mcp() -> McpToolset:
     return McpToolset(
-        connection_params=StdioServerParameters(
-            command="npx",
-            args=[
-                "@arizeai/phoenix-mcp@latest",
-                "--baseUrl", os.environ["PHOENIX_COLLECTOR_ENDPOINT"],
-                "--apiKey",  os.environ["PHOENIX_API_KEY"],
-            ],
-        )
+        connection_params=StdioConnectionParams(
+            server_params=StdioServerParameters(
+                command="npx",
+                args=[
+                    "@arizeai/phoenix-mcp@latest",
+                    "--baseUrl", os.environ["PHOENIX_COLLECTOR_ENDPOINT"],
+                    "--apiKey", os.environ["PHOENIX_API_KEY"],
+                ],
+            ),
+            timeout=30.0,
+        ),
+        tool_filter=[
+            "list-traces",
+            "get-spans",
+            "get-prompt-version",
+            "upsert-prompt",
+        ],
     )
 
 
