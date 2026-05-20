@@ -18,7 +18,7 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 from google.adk.agents import Agent
 from google.adk.runners import InMemoryRunner
 from google.adk.tools import FunctionTool
-from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
+from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 from mcp import StdioServerParameters
 from google.genai import types
 
@@ -53,8 +53,8 @@ def load_eval_summary() -> str:
 
 # ── Phoenix MCP toolset ────────────────────────────────────────────────────────
 
-def make_phoenix_mcp() -> MCPToolset:
-    return MCPToolset(
+def make_phoenix_mcp() -> McpToolset:
+    return McpToolset(
         connection_params=StdioServerParameters(
             command="npx",
             args=[
