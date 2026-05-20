@@ -19,10 +19,10 @@ from google.adk.agents import Agent
 from google.adk.tools import FunctionTool, google_search
 from dotenv import load_dotenv
 
-from instrumentation import setup_tracing
-from research_agent.prompt import research_agent_instruction
+from ..instrumentation import setup_tracing
+from .prompt import research_agent_instruction
 
-from research_agent.tools.research_tools import (
+from .tools.research_tools import (
     search_web,
     search_wikipedia,
     extract_key_claims,
