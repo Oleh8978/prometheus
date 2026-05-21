@@ -157,7 +157,10 @@ Label the new prompt version as: cycle-{cycle_number}
 
     print(f"\n── Improvement Cycle {cycle_number} Change Log ──")
     print(change_log)
-
+    try:
+        await runner.close()
+    except Exception as e:
+        print(f"Warning: error closing runner: {e}")
     # Save the change log
     log_path = Path(__file__).resolve().parents[1] / "data" / f"change_log_cycle_{cycle_number}.txt"
     log_path.write_text(change_log)
