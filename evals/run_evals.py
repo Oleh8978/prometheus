@@ -118,7 +118,7 @@ def get_traces_dataframe(project: str, limit: int = 100) -> pd.DataFrame:
     rows = []
     for span in spans:
         name = span.get("name", "")
-        if not name.startswith("invocation"):
+        if name != "invocation [research_agent_batch]":
             continue
 
         attrs = span.get("attributes", {})

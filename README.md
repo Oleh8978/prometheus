@@ -67,10 +67,10 @@ This is not simulated. The improvement agent calls live `@arizeai/phoenix-mcp` M
 
 | Metric | Cycle 1 (baseline) | Cycle 2 | Cycle 3 |
 |--------|--------------------|---------|---------|
-| `citation_groundedness` | 0.389 | — | — |
-| `reasoning_coherence` | 1.000 | — | — |
-| `hallucination_risk` | 0.667 | — | — |
-| `completeness` | 1.000 | — | — |
+| `citation_groundedness` | 0.389 | 0.6 | — |
+| `reasoning_coherence` | 1.000 | 1.0 | — |
+| `hallucination_risk` | 0.667 | 0.5 | — |
+| `completeness` | 1.000 | — | 1.0 |
 
 > Fill in after running cycles. Baseline scores visible in Phoenix: [app.phoenix.arize.com/s/you-can-do-your-own-phoenix-or-ask-me-to-share-mine](https://app.phoenix.arize.com/s/you-can-do-your-own-phoenix-or-ask-me-to-share-mine)
 
