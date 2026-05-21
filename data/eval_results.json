@@ -1,0 +1,226 @@
+[
+  {
+    "span_id":"f373df5073d29ce6",
+    "name":"citation_groundedness",
+    "label":"uncited",
+    "score":0.0,
+    "explanation":"The report makes several factual claims about technical bottlenecks in autonomous vehicles but does not provide any specific citations, named sources, or references for these claims."
+  },
+  {
+    "span_id":"f373df5073d29ce6",
+    "name":"reasoning_coherence",
+    "label":"coherent",
+    "score":1.0,
+    "explanation":"The report thoroughly decomposes the question into distinct technical areas, provides specific supporting details as evidence for each bottleneck, and logically derives its overall conclusion from these well-explained points."
+  },
+  {
+    "span_id":"f373df5073d29ce6",
+    "name":"hallucination_risk",
+    "label":"medium_risk",
+    "score":0.5,
+    "explanation":"The statement \"The verification and validation process alone requires billions of miles of testing, both virtual and physical\" presents a precise, large numerical claim (\"billions of miles\") as a fact without any citation or hedging, which is a significant hallucination risk."
+  },
+  {
+    "span_id":"f373df5073d29ce6",
+    "name":"completeness",
+    "label":"complete",
+    "score":1.0,
+    "explanation":"none"
+  },
+  {
+    "span_id":"179ef057627d654e",
+    "name":"citation_groundedness",
+    "label":"well_cited",
+    "score":1.0,
+    "explanation":"Most major factual claims, including specific numerical data for both weight loss and cardiovascular outcomes, are supported by named sources or URLs in the \"Evidence & Citations\" section."
+  },
+  {
+    "span_id":"179ef057627d654e",
+    "name":"reasoning_coherence",
+    "label":"coherent",
+    "score":1.0,
+    "explanation":"The report clearly decomposes the question into weight loss and cardiovascular outcomes, presents evidence for each intervention before drawing comparisons, and logically derives its conclusions, acknowledging nuances like different weight loss metrics."
+  },
+  {
+    "span_id":"179ef057627d654e",
+    "name":"hallucination_risk",
+    "label":"medium_risk",
+    "score":0.5,
+    "explanation":"The report states, \"Studies indicate a significant reduction in cardiovascular disease (CVD) risk, with relative reductions of 29-56% for atherosclerotic cardiovascular disease (ASCVD), coronary heart disease (CHD), stroke, and heart failure.\" This precise numerical range (29-56%) is presented as a factual finding from \"studies\" but is not explicitly attributed to a source in the \"Evidence & Citat"
+  },
+  {
+    "span_id":"179ef057627d654e",
+    "name":"completeness",
+    "label":"complete",
+    "score":1.0,
+    "explanation":"The report comprehensively addresses all aspects of the question: comparing GLP-1 drugs and bariatric surgery on both 5-year weight loss outcomes and cardiovascular risk. It provides data for both interventions, includes direct comparisons highlighting relative superiority and methodological differences (e.g., total vs. excess body weight loss), and critically, includes a dedicated \"Open Questions"
+  },
+  {
+    "span_id":"adb9365e9a382a42",
+    "name":"citation_groundedness",
+    "label":"well_cited",
+    "score":1.0,
+    "explanation":"The report provides specific, named sources for every major factual claim made in both the \"Causes\" and \"Regulatory Changes\" sections."
+  },
+  {
+    "span_id":"adb9365e9a382a42",
+    "name":"reasoning_coherence",
+    "label":"coherent",
+    "score":1.0,
+    "explanation":"The report clearly decomposes the question into distinct sections for causes and regulatory changes, provides detailed evidence and logical explanations for each point, and uses cited sources to support its conclusions."
+  },
+  {
+    "span_id":"adb9365e9a382a42",
+    "name":"hallucination_risk",
+    "label":"low_risk",
+    "score":1.0,
+    "explanation":"none found"
+  },
+  {
+    "span_id":"adb9365e9a382a42",
+    "name":"completeness",
+    "label":"complete",
+    "score":1.0,
+    "explanation":"none"
+  },
+  {
+    "span_id":"addc26e208ce04f3",
+    "name":"citation_groundedness",
+    "label":"uncited",
+    "score":0.0,
+    "explanation":"The report makes numerous factual claims about the technical mechanisms and approaches of Anthropic and OpenAI but does not provide any specific citations, URLs, or named research papers to support these claims."
+  },
+  {
+    "span_id":"addc26e208ce04f3",
+    "name":"reasoning_coherence",
+    "label":"coherent",
+    "score":1.0,
+    "explanation":"The report clearly decomposes the question into individual organizational approaches and mechanisms, presents evidence for each, and logically derives differences and commonalities based on that evidence."
+  },
+  {
+    "span_id":"addc26e208ce04f3",
+    "name":"hallucination_risk",
+    "label":"low_risk",
+    "score":1.0,
+    "explanation":"none found"
+  },
+  {
+    "span_id":"addc26e208ce04f3",
+    "name":"completeness",
+    "label":"complete",
+    "score":1.0,
+    "explanation":"none"
+  },
+  {
+    "span_id":"3fe20846e281bc3b",
+    "name":"citation_groundedness",
+    "label":"uncited",
+    "score":0.0,
+    "explanation":"The report does not include any specific citations, named sources, URLs, or footnotes to support its factual claims regarding performance, cost, or features of the technologies discussed."
+  },
+  {
+    "span_id":"3fe20846e281bc3b",
+    "name":"reasoning_coherence",
+    "label":"coherent",
+    "score":1.0,
+    "explanation":"coherent: The report clearly decomposes the question into key tradeoffs, weighs the pros and cons of each option against the specific constraints (startup, <10M vectors, 2025), and logically derives its recommendation from this evidence."
+  },
+  {
+    "span_id":"3fe20846e281bc3b",
+    "name":"hallucination_risk",
+    "label":"low_risk",
+    "score":1.0,
+    "explanation":"The report states that dedicated vector databases \"Offer sub-millisecond query times.\" While this is a commonly cited performance characteristic for optimized dedicated vector databases, it is a specific performance claim presented as a fact without a direct citation to a benchmark or study within the report. However, it's broadly true for the category and not a unique, invented, or highly specifi"
+  },
+  {
+    "span_id":"3fe20846e281bc3b",
+    "name":"completeness",
+    "label":"complete",
+    "score":1.0,
+    "explanation":"none"
+  },
+  {
+    "span_id":"51394036e2eec474",
+    "name":"citation_groundedness",
+    "label":"well_cited",
+    "score":1.0,
+    "explanation":"The report consistently provides named sources and often years for nearly all major factual claims and specific examples discussed under each technical bottleneck."
+  },
+  {
+    "span_id":"51394036e2eec474",
+    "name":"reasoning_coherence",
+    "label":"coherent",
+    "score":1.0,
+    "explanation":"The report effectively decomposes the complex question into distinct technical domains, presents clear evidence from multiple cited sources for each identified bottleneck, and logically derives its conclusions about the main challenges preventing L4 scale in 2025."
+  },
+  {
+    "span_id":"51394036e2eec474",
+    "name":"hallucination_risk",
+    "label":"high_risk",
+    "score":0.0,
+    "explanation":"The report cites \"NHTSA Safety Research Portfolio Public Meeting: Fall 2025\" as a source for current struggles. Citing a public meeting scheduled for a future date (Fall 2025) as if it has already occurred and provided data for the report is a clear temporal hallucination, as the information from this meeting would not be available at the time the report was ostensibly written. Several other sourc"
+  },
+  {
+    "span_id":"51394036e2eec474",
+    "name":"completeness",
+    "label":"complete",
+    "score":1.0,
+    "explanation":"none"
+  },
+  {
+    "span_id":"f2777affd64ed297",
+    "name":"citation_groundedness",
+    "label":"well_cited",
+    "score":1.0,
+    "explanation":"The report provides specific citations or named sources, including URLs and institutional names, for nearly all major factual claims, especially for quantitative data and specific findings."
+  },
+  {
+    "span_id":"f2777affd64ed297",
+    "name":"reasoning_coherence",
+    "label":"coherent",
+    "score":1.0,
+    "explanation":"The report clearly decomposes the question into weight loss and cardiovascular outcomes for each intervention, presents specific evidence for each, directly compares them, and logically derives its conclusions while acknowledging nuances and limitations."
+  },
+  {
+    "span_id":"f2777affd64ed297",
+    "name":"hallucination_risk",
+    "label":"low_risk",
+    "score":1.0,
+    "explanation":"The statement \"Weight loss typically stabilizes around 65 weeks of treatment\" provides a precise duration (\"65 weeks\") as a factual claim without a specific citation provided for that exact figure in the \"Evidence & Citations\" section. While the surrounding claims are well-cited, this specific detail lacks a direct source link."
+  },
+  {
+    "span_id":"f2777affd64ed297",
+    "name":"completeness",
+    "label":"complete",
+    "score":1.0,
+    "explanation":"none"
+  },
+  {
+    "span_id":"7694b264e1bad566",
+    "name":"citation_groundedness",
+    "label":"uncited",
+    "score":0.0,
+    "explanation":"The report makes several factual claims about the causes and regulatory responses to the banking crisis but does not provide any specific citations, named sources, URLs, or references to support these claims."
+  },
+  {
+    "span_id":"7694b264e1bad566",
+    "name":"reasoning_coherence",
+    "label":"coherent",
+    "score":1.0,
+    "explanation":"The report clearly decomposes the question into causes and regulatory changes, provides well-explained evidence for each point, and logically derives its conclusions by linking regulatory responses directly to the identified causes and vulnerabilities."
+  },
+  {
+    "span_id":"7694b264e1bad566",
+    "name":"hallucination_risk",
+    "label":"low_risk",
+    "score":1.0,
+    "explanation":"The report contains several specific claims and figures without direct citation (e.g., the FDIC's $250,000 insurance limit, the Federal Reserve's focus on banks with assets from $100 billion to $250 billion, and the BTFP allowing assets to be pledged at par value). However, these specific details are factually accurate and widely known within the context of the 2023 banking crisis and financial re"
+  },
+  {
+    "span_id":"7694b264e1bad566",
+    "name":"completeness",
+    "label":"complete",
+    "score":1.0,
+    "explanation":"none"
+  }
+]

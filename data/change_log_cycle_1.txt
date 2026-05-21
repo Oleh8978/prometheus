@@ -1,0 +1,20 @@
+Here is the change log for the updated system prompt:
+
+**Change Log:**
+
+**Version:** cycle-1
+
+**What changed:**
+Modified the `research-system-prompt` to explicitly instruct the research agent on citation practices and attributing factual claims. Specific changes were made to the "Information Synthesis", "Draft Report", and "Review and Refine" steps of the research workflow.
+
+**Why:**
+The current eval summary highlighted significant deficiencies in `citation_groundedness` (average score 0.67) and an elevated `hallucination_risk` (average score 0.58). The analysis of failed spans revealed three concrete failure patterns:
+1.  **Lack of specific in-text citations:** Reports lacked specific in-text citations for major factual claims, even when a general source list was present, making claims unverifiable.
+2.  **Missing sources entirely:** Numerous factual claims were made without any citations, named sources, or references whatsoever.
+3.  **Unattributed numerical data:** Precise figures and statistics were stated as facts without any source or attribution, directly contributing to hallucination risk.
+
+**What to expect to improve:**
+By adding clear and explicit instructions within the prompt regarding citation requirements, we expect to see significant improvements in:
+1.  **Citation Groundedness:** The agent is now explicitly required to provide in-text citations for *every* factual statement, claim, statistic, or numerical value, including instructions on what information to include in citations. This should directly address the "uncited" issues and raise the overall groundedness score.
+2.  **Hallucination Risk:** By demanding attribution for all factual information, especially numerical data, the agent will be less likely to present unsubstantiated figures, thereby reducing the risk of hallucination.
+3.  **Report Verifiability and Credibility:** The generated reports should become more trustworthy and verifiable due to comprehensive and precise source attribution, improving the overall quality and reliability of the research output.
