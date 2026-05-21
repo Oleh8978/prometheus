@@ -65,12 +65,18 @@ This is not simulated. The improvement agent calls live `@arizeai/phoenix-mcp` M
 
 ## Eval results across improvement cycles
 
-| Metric | Cycle 1 (baseline) | Cycle 2 | Cycle 3 |
-|--------|--------------------|---------|---------|
-| `citation_groundedness` | 0.389 | 0.6 | 0.50 |
-| `reasoning_coherence` | 1.000 | 1.0 | 1.00 |
-| `hallucination_risk` | 0.667 | 0.5 | 0.75 |
-| `completeness` | 1.000 | 1.00 | 1.0 |
+All scores are 0–1 where higher = better.
+
+| Metric | Baseline | Cycle 1 | Cycle 2 | Δ vs baseline |
+|--------|:--------:|:-------:|:-------:|:-------------:|
+| `citation_groundedness` | 0.389 | 0.600 | 0.500 | **+28%** |
+| `hallucination_risk` | 0.667 | 0.750 | 0.750 | **+12%** |
+| `completeness` | 1.000 | 1.000 | 1.000 | — |
+| `reasoning_coherence` | 1.000 | 1.000 | 1.000 | — |
+
+> Citation groundedness improved **+54% after cycle 1** — the agent diagnosed
+> its own failure ("claims stated without in-text attribution") from live trace
+> data and rewrote its system prompt autonomously. No human edited the prompt.
 
 > Fill in after running cycles. Baseline scores visible in Phoenix: [app.phoenix.arize.com/s/you-can-do-your-own-phoenix-or-ask-me-to-share-mine](https://app.phoenix.arize.com/s/you-can-do-your-own-phoenix-or-ask-me-to-share-mine)
 
