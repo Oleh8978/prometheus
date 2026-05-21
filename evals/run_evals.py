@@ -61,6 +61,15 @@ def _gemini_client() -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
+def _phoenix_client() -> Client:
+    """Return a Phoenix Client configured from environment variables."""
+    base_url = os.environ.get("PHOENIX_COLLECTOR_ENDPOINT") or os.environ.get("PHOENIX_BASE_URL")
+    if base_url:
+        print(f"  Using Phoenix collector: {base_url}")
+        return Client(base_url=base_url)
+    return Client()
+
+
 def _parse_label(text: str, valid_labels: list[str]) -> str | None:
     """Return the first valid label found in the model's response (case-insensitive)."""
     lower = text.lower()
@@ -86,11 +95,18 @@ def get_traces_dataframe(project: str, limit: int = 100) -> pd.DataFrame:
     Pull agent spans from Phoenix using get_spans().
     Parses JSON-encoded input.value and output.value correctly.
     """
-    client = Client()
+    client = _phoenix_client()
 
-    spans = client.spans.get_spans(
-        project_identifier=project,
-    )
+    try:
+        spans = client.spans.get_spans(
+            project_identifier=project,
+            limit=limit,
+            timeout=60,
+        )
+    except Exception as e:
+        print(f"Failed to fetch spans from Phoenix: {e}")
+        print("Check PHOENIX_COLLECTOR_ENDPOINT/PHOENIX_BASE_URL, NETWORK connectivity, and Phoenix API key.")
+        return pd.DataFrame()
 
     if not spans:
         print("No spans returned from Phoenix.")
