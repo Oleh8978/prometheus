@@ -84,10 +84,36 @@ def run_agent(question: str) -> str:
 
 
 # ── Helper: score a response with LLM-as-Judge ────────────────────────────────
+def get_eval_model() -> str:
+    """Get the evaluator model name with guaranteed fallback."""
+    model = os.environ.get("EVAL_MODEL") or os.environ.get("GEMINI_MODEL")
+    return model if model else "gemini-2.5-flash"
+
+
+def make_eval_client():
+    """Create a GenAI client that works with either Vertex or API key auth."""
+    use_vertex = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if use_vertex:
+        project = os.environ.get("GOOGLE_CLOUD_PROJECT")
+        location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+        if project:
+            return gai.Client(vertexai=True, project=project, location=location)
+
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    if api_key:
+        return gai.Client(api_key=api_key)
+
+    return gai.Client()
+
+
 def score_response(question: str, answer: str) -> dict:
     """Score directly from question+answer — no Phoenix re-fetch needed."""
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    ai = gai.Client(api_key=api_key) if api_key else gai.Client()
+    ai = make_eval_client()
+    eval_model = get_eval_model()
 
     EVALS = [
         ("citation_groundedness",
@@ -117,20 +143,23 @@ def score_response(question: str, answer: str) -> dict:
 
     scores = {}
     labels_out = {}
+    errors_out = {}
     for name, prompt, label_map in EVALS:
         try:
             resp = ai.models.generate_content(
-                model="gemini-2.0-flash", contents=prompt
+                model=eval_model, contents=prompt
             )
-            text = resp.text.strip().lower()
+            text = (resp.text or "").strip().lower()
             label = next((l for l in label_map if l in text), list(label_map.keys())[1])
             scores[name] = label_map[label]
             labels_out[name] = label
-        except Exception:
+            errors_out[name] = ""
+        except Exception as e:
             scores[name] = None
             labels_out[name] = "error"
+            errors_out[name] = f"{type(e).__name__}: {str(e)[:200]}"
 
-    return scores, labels_out
+    return scores, labels_out, errors_out
 
 
 # ── Helper: log scores to Phoenix ─────────────────────────────────────────────
@@ -169,6 +198,52 @@ def log_to_phoenix(scores: dict, labels: dict, question: str):
                 )
     except Exception:
         pass  # annotation logging is best-effort
+
+
+def get_runtime_health() -> dict[str, object]:
+    """Summarize evaluator auth/runtime configuration for quick UI diagnostics."""
+    use_vertex = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    project = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
+    location = os.environ.get("GOOGLE_CLOUD_LOCATION", "")
+    api_key = os.environ.get("GOOGLE_API_KEY", "")
+    eval_model = get_eval_model()
+
+    warnings = []
+    if use_vertex and not project:
+        warnings.append("GOOGLE_GENAI_USE_VERTEXAI is enabled but GOOGLE_CLOUD_PROJECT is missing.")
+    if use_vertex and not location:
+        warnings.append("GOOGLE_CLOUD_LOCATION is missing; defaulting to us-central1 may fail if unsupported.")
+    if not use_vertex and not api_key:
+        warnings.append("Neither Vertex mode nor GOOGLE_API_KEY is configured for evaluator calls.")
+
+    auth_mode = "Vertex AI" if use_vertex else ("Gemini API Key" if api_key else "Auto/Fallback")
+    return {
+        "auth_mode": auth_mode,
+        "eval_model": eval_model,
+        "project": project or "(not set)",
+        "location": location or "(not set)",
+        "api_key_set": bool(api_key),
+        "warnings": warnings,
+    }
+
+
+def ping_evaluator_model() -> tuple[bool, str]:
+    """Run a tiny evaluator-model request to validate runtime auth + model access."""
+    eval_model = get_eval_model()
+    try:
+        ai = make_eval_client()
+        resp = ai.models.generate_content(
+            model=eval_model,
+            contents="Reply with exactly OK.",
+        )
+        text = (resp.text or "").strip()
+        return True, text or "(empty response)"
+    except Exception as e:
+        return False, f"{type(e).__name__}: {e}"
 
 
 # ── Helper: run improvement cycle ─────────────────────────────────────────────
@@ -233,7 +308,7 @@ with col_main:
 
             # ── Step 2: Score the response ────────────────────────────────
             with st.spinner("Scoring with LLM-as-Judge (4 dimensions)..."):
-                scores, labels = score_response(question, result)
+                scores, labels, errors = score_response(question, result)
                 log_to_phoenix(scores, labels, question)
 
             # Show score metrics
@@ -256,6 +331,13 @@ with col_main:
                     delta=lbl,
                     help=help_text,
                 )
+
+            # Show evaluator errors if any occurred
+            if any(errors.values()):
+                with st.expander("Evaluator errors (debug)", expanded=False):
+                    for metric, error_msg in errors.items():
+                        if error_msg:
+                            st.warning(f"**{metric}**: {error_msg}")
 
             # Store in history
             st.session_state.run_count += 1
@@ -349,3 +431,30 @@ with col_side:
     st.markdown("""
 - [💻 GitHub](https://github.com/Oleh8978/prometheus)
     """)
+
+    st.divider()
+    st.markdown("### Runtime health")
+    health = get_runtime_health()
+    if health["warnings"]:
+        st.warning("Config issues detected for evaluator runtime.")
+    else:
+        st.success("Evaluator runtime config looks ready.")
+
+    st.caption(f"Auth: {health['auth_mode']} · Model: {health['eval_model']}")
+    st.caption(
+        f"Project: {health['project']} · Location: {health['location']} · API key set: {health['api_key_set']}"
+    )
+
+    if health["warnings"]:
+        with st.expander("Health warnings"):
+            for warning in health["warnings"]:
+                st.write(f"- {warning}")
+
+    if st.button("Run evaluator ping", key="eval_ping", use_container_width=True):
+        ok, msg = ping_evaluator_model()
+        if ok:
+            st.success("Evaluator ping succeeded.")
+            st.caption(msg)
+        else:
+            st.error("Evaluator ping failed.")
+            st.caption(msg)
