@@ -51,8 +51,12 @@ if "improvement_ran" not in st.session_state:
     st.session_state.improvement_ran = False
 if "last_improvement_run" not in st.session_state:
     st.session_state.last_improvement_run = 0
-if "selected_question" not in st.session_state:
-    st.session_state.selected_question = ""
+if "question_input" not in st.session_state:
+    st.session_state.question_input = ""
+
+
+def set_question_input(question: str) -> None:
+    st.session_state.question_input = question
 
 
 # ── Helper: run the research agent ────────────────────────────────────────────
@@ -206,7 +210,6 @@ with col_main:
     # Question input
     question = st.text_area(
         "Research question",
-        value=st.session_state.selected_question,
         placeholder="What are the real tradeoffs between vector databases and pgvector for production RAG in 2025?",
         height=100,
         key="question_input",
@@ -305,9 +308,13 @@ with col_side:
     st.caption("Click any to auto-fill the research box")
 
     for i, q in enumerate(SAMPLE_QUESTIONS):
-        if st.button(q[:65] + "…", key=f"sample_{i}", use_container_width=True):
-            st.session_state.selected_question = q
-            st.rerun()
+        st.button(
+            q[:65] + "…",
+            key=f"sample_{i}",
+            use_container_width=True,
+            on_click=set_question_input,
+            args=(q,),
+        )
 
     st.divider()
     st.markdown("### How it works")
