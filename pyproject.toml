@@ -17,6 +17,7 @@ dependencies = [
     "tavily-python>=0.7.24",
     "wikipedia-api>=0.14.1",
     "ddgs>=9.14.4",
+    "streamlit>=1.57.0",
 ]
 
 [tool.hatch.build.targets.wheel]
