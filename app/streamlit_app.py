@@ -10,7 +10,7 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 from google.adk.runners import InMemoryRunner
 from google.genai import types
-from research_agent.agent import root_agent
+from agent.research_agent.agent import root_agent
 
 st.set_page_config(page_title="Prometheus", page_icon="🔥")
 st.title("Prometheus")
