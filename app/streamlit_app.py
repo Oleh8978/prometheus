@@ -385,6 +385,9 @@ with col_main:
                         "The agent now uses the updated prompt."
                     )
 
+            # Force page rerun to show updated counters
+            st.rerun()
+
 with col_side:
     st.markdown("### Try these questions")
     st.caption("Click any to auto-fill the research box")
