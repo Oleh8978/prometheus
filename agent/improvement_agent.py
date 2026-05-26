@@ -109,7 +109,10 @@ Rules:
 
 async def run_improvement_cycle(cycle_number: int = 1) -> str:
     """Run one improvement cycle. Returns the agent's change log."""
-    from instrumentation import setup_tracing
+    try:
+        from .instrumentation import setup_tracing
+    except ImportError:
+        from instrumentation import setup_tracing
     setup_tracing()
 
     eval_summary = load_eval_summary()

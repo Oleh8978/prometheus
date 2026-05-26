@@ -49,6 +49,8 @@ if "score_history" not in st.session_state:
     st.session_state.score_history = []
 if "improvement_ran" not in st.session_state:
     st.session_state.improvement_ran = False
+if "last_improvement_run" not in st.session_state:
+    st.session_state.last_improvement_run = 0
 if "selected_question" not in st.session_state:
     st.session_state.selected_question = ""
 
@@ -80,7 +82,8 @@ def run_agent(question: str) -> str:
 # ── Helper: score a response with LLM-as-Judge ────────────────────────────────
 def score_response(question: str, answer: str) -> dict:
     """Score directly from question+answer — no Phoenix re-fetch needed."""
-    ai = gai.Client(api_key=os.environ.get("GOOGLE_API_KEY"))
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    ai = gai.Client(api_key=api_key) if api_key else gai.Client()
 
     EVALS = [
         ("citation_groundedness",
@@ -167,7 +170,6 @@ def log_to_phoenix(scores: dict, labels: dict, question: str):
 # ── Helper: run improvement cycle ─────────────────────────────────────────────
 def run_improvement():
     try:
-        sys.path.insert(0, str(ROOT / "agent"))
         from agent.improvement_agent import run_improvement_cycle
 
         async def _improve():
@@ -267,7 +269,12 @@ with col_main:
             )
 
             # ── Step 3: Auto-trigger improvement after threshold ──────────
-            if st.session_state.run_count >= IMPROVEMENT_THRESHOLD and not st.session_state.improvement_ran:
+            should_improve = (
+                st.session_state.run_count >= IMPROVEMENT_THRESHOLD
+                and st.session_state.run_count % IMPROVEMENT_THRESHOLD == 0
+                and st.session_state.last_improvement_run != st.session_state.run_count
+            )
+            if should_improve:
                 st.divider()
                 st.info(
                     f"🔄 **{IMPROVEMENT_THRESHOLD} questions answered.** "
@@ -278,16 +285,20 @@ with col_main:
                     "Improvement agent: reading traces → diagnosing failures → rewriting prompt → saving to Phoenix Prompts..."
                 ):
                     change_log = run_improvement()
+
+                if isinstance(change_log, str) and change_log.startswith("Improvement cycle error:"):
+                    st.error(change_log)
+                else:
                     st.session_state.improvement_ran = True
+                    st.session_state.last_improvement_run = st.session_state.run_count
+                    st.success("✅ Improvement cycle complete — system prompt updated in Phoenix Prompts registry.")
+                    with st.expander("📋 See what the improvement agent changed and why"):
+                        st.markdown(change_log)
 
-                st.success("✅ Improvement cycle complete — system prompt updated in Phoenix Prompts registry.")
-                with st.expander("📋 See what the improvement agent changed and why"):
-                    st.markdown(change_log)
-
-                st.info(
-                    "Ask another question to see the improved responses. "
-                    "The agent now uses the updated prompt."
-                )
+                    st.info(
+                        "Ask another question to see the improved responses. "
+                        "The agent now uses the updated prompt."
+                    )
 
 with col_side:
     st.markdown("### Try these questions")
