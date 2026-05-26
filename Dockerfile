@@ -14,7 +14,7 @@ RUN pip install uv
 WORKDIR /app
 
 # Copy dependency files first (better Docker layer caching)
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 
 # Install Python dependencies (no dev deps, no editable install)
 RUN uv sync --frozen --no-dev
