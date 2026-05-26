@@ -1,0 +1,16 @@
+.env
+.env.*
+*.pyc
+__pycache__/
+.venv/
+.git/
+.gitignore
+*.db
+.DS_Store
+__MACOSX/
+PLAN.md
+promts/
+.adk/
+data/batch_results.json
+data/eval_results.json
+data/change_log_*.txt
