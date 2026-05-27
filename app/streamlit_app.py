@@ -5,6 +5,7 @@ import os
 import json
 import time
 import secrets
+import importlib
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -21,7 +22,20 @@ from google.genai import types
 from google import genai as gai
 from phoenix.client import Client
 
+import agent.research_agent.agent as research_agent_module
 from agent.research_agent.agent import root_agent
+
+
+def reload_research_agent():
+    """Reload the research agent to pick up any updated prompts from improvement cycles."""
+    global root_agent
+    try:
+        # Reload the agent module to get the latest prompt
+        importlib.reload(research_agent_module)
+        root_agent = research_agent_module.root_agent
+    except Exception as e:
+        # If reload fails, continue with existing agent
+        pass
 
 # ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -297,7 +311,10 @@ with col_main:
             st.warning("Enter a question first — or click one of the examples on the right.")
         else:
             # ── Step 1: Run the agent ──────────────────────────────────────
-            with st.spinner("Researching... (30–90 seconds — agent is searching, extracting claims, and synthesizing)"):
+            # Reload agent to pick up any improved prompts from previous cycles
+            reload_research_agent()
+            
+            with st.spinner("Researching... (30–90 seconds — agent is searching, extracting claims, and synthesizing):"):
                 start = time.time()
                 result = run_agent(question)
                 elapsed = round(time.time() - start, 1)
