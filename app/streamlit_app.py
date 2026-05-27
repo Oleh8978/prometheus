@@ -23,6 +23,7 @@ from google import genai as gai
 from phoenix.client import Client
 
 import agent.research_agent.agent as research_agent_module
+import agent.research_agent.prompt as prompt_module
 from agent.research_agent.agent import root_agent
 
 
@@ -30,7 +31,10 @@ def reload_research_agent():
     """Reload the research agent to pick up any updated prompts from improvement cycles."""
     global root_agent
     try:
-        # Reload the agent module to get the latest prompt
+        # Reload the prompt module FIRST to clear Python's module cache
+        # Otherwise, agent.py will import the old cached version
+        importlib.reload(prompt_module)
+        # Now reload the agent module to pick up the fresh prompt
         importlib.reload(research_agent_module)
         root_agent = research_agent_module.root_agent
     except Exception as e:
